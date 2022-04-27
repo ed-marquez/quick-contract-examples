@@ -2,26 +2,27 @@
 pragma solidity ^0.8.0;
 import "./oz/openzeppelin-contracts-4.5.0/contracts/token/ERC20/IERC20.sol";
 import "./oz/openzeppelin-contracts-4.5.0/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+
 contract ERC20Contract {
 
     function name(address token) public view returns(string memory) {
         return IERC20Metadata(token).name();
     }
 
-    function symbol(address token) public view {
-        IERC20Metadata(token).symbol();
+    function symbol(address token) public view returns(string memory) {
+        return IERC20Metadata(token).symbol();
     }
 
-    function decimals(address token) public view {
-        IERC20Metadata(token).decimals();
+    function decimals(address token) public view returns(uint8) {
+        return IERC20Metadata(token).decimals();
     }
 
-    function totalSupply(address token) public view {
-        IERC20(token).totalSupply();
+    function totalSupply(address token) public view returns(uint256){
+        return IERC20(token).totalSupply();
     }
 
-    function balanceOf(address token, address account) public view {
-        IERC20(token).balanceOf(account);
+    function balanceOf(address token, address account) public view returns(uint256){
+        return IERC20(token).balanceOf(account);
     }
 
     function transfer(address token, address recipient, uint256 amount) public {
@@ -29,8 +30,10 @@ contract ERC20Contract {
     }
 
     function delegateTransfer(address token, address recipient, uint256 amount) public {
-      (bool success, bytes memory result) = address(IERC20(token)).delegatecall(abi.encodeWithSignature("transfer(address,uint256)", recipient, amount));
+        (bool success, bytes memory result) = address(IERC20(token)).delegatecall(abi.encodeWithSignature("transfer(address,uint256)", recipient, amount));
     }
+
+    fallback () external{}
 
     //Not supported operations - should return a failure
 
