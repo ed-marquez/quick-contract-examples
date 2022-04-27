@@ -6,7 +6,7 @@ import "./hip-206/HederaTokenService.sol";
 import "./hip-206/HederaResponseCodes.sol";
 
 
-contract transferHbar2Contract is HederaTokenService {
+contract hbar2Contract is HederaTokenService {
 
     address tokenAddress;
 
@@ -47,8 +47,6 @@ contract transferHbar2Contract is HederaTokenService {
 
     }
 
-        fallback() external payable {}
-    
     function getBalance() public view returns (uint) {
         return address(this).balance;
 }

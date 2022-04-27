@@ -17,6 +17,7 @@ const {
 	TransactionRecordQuery,
 	ContractInfoQuery,
 	TokenAssociateTransaction,
+	TransferTransaction,
 } = require("@hashgraph/sdk");
 const fs = require("fs");
 
@@ -28,15 +29,11 @@ const aliceId = AccountId.fromString(process.env.ALICE_ID);
 const aliceyKey = PrivateKey.fromString(process.env.ALICE_PVKEY);
 
 const client = Client.forTestnet().setOperator(operatorId, operatorKey);
-client.setDefaultMaxTransactionFee(new Hbar(5));
-client.setMaxQueryPayment(new Hbar(0.01));
 
 async function main() {
 	// STEP 1 ===================================
 	console.log(`STEP 1 ===================================`);
-	const bytecode = fs.readFileSync(
-		"./1_transferHbar2Contract_setPayableAmt_sol_transferHbar2Contract.bin"
-	);
+	const bytecode = fs.readFileSync("./1_transferHbar2Contract_viaPayableFcn_sol_hbar2Contract.bin");
 	console.log(`- Done \n`);
 
 	// STEP 2 ===================================

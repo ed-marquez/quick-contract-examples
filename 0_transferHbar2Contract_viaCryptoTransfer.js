@@ -13,20 +13,24 @@ const {
 	TransferTransaction,
 	ContractInfoQuery,
 	AccountBalanceQuery,
+	TransactionRecordQuery,
 } = require("@hashgraph/sdk");
 const fs = require("fs");
 
 // Configure accounts and client
 const operatorId = AccountId.fromString(process.env.OPERATOR_ID);
 const operatorKey = PrivateKey.fromString(process.env.OPERATOR_PVKEY);
+const treasuryId = AccountId.fromString(process.env.TREASURY_ID);
+const treasuryKey = PrivateKey.fromString(process.env.TREASURY_PVKEY);
+const aliceId = AccountId.fromString(process.env.ALICE_ID);
+const aliceyKey = PrivateKey.fromString(process.env.ALICE_PVKEY);
+
 const client = Client.forTestnet().setOperator(operatorId, operatorKey);
 
-// client.setDefaultMaxTransactionFee(new Hbar(2));
-// client.setMaxQueryPayment(new Hbar(0.75));
 async function main() {
 	// Import the compiled contract bytecode
 	const contractBytecode = fs.readFileSync(
-		"2_2_transferHbar2Contract_fallback_sol_FallbackTransferToContract.bin"
+		"0_transferHbar2Contract_viaCryptoTrans_sol_hbar2Contract.bin"
 	);
 
 	// Create a file on Hedera and store the bytecode
@@ -51,14 +55,15 @@ async function main() {
 	console.log(`- The smart contract ID is: ${contractId} \n`);
 	console.log(`- The smart contract ID in Solidity format is: ${contractAddress} \n`);
 
-	// Transfer HBAR to smart contract using .setPayableAmount
-	const contractExecuteTx = new ContractExecuteTransaction()
-		.setContractId(contractId)
-		.setPayableAmount(100)
-		.setGas(300000);
-	const contractExecuteSubmit = await contractExecuteTx.execute(client);
+	// Transfer HBAR to smart contract using TransferTransaction()
+	const contractExecuteTx = new TransferTransaction()
+		.addHbarTransfer(treasuryId, -10)
+		.addHbarTransfer(contractId, 10)
+		.freezeWith(client);
+	const contractExecuteSign = await contractExecuteTx.sign(treasuryKey);
+	const contractExecuteSubmit = await contractExecuteSign.execute(client);
 	const contractExecuteRx = await contractExecuteSubmit.getReceipt(client);
-	console.log(`- Contract function call status: ${contractExecuteRx.status} \n`);
+	console.log(`- Crypto transfer to contract: ${contractExecuteRx.status} \n`);
 
 	// Query the contract balance calling the function in the contract
 	const contractQueryTx = new ContractCallQuery()
