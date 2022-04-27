@@ -164,6 +164,21 @@ async function main() {
 	);
 
 	// Call HIP-218 functions using ContractCallQuery()
+	const contractCallTx4 = new ContractCallQuery()
+		.setContractId(contractId)
+		.setGas(4000000)
+		.setFunction(
+			"tokenURI",
+			new ContractFunctionParameters().addAddress(tokenAddressSol).addUint256(nftId)
+		)
+		.setQueryPayment(new Hbar(1));
+	const contractCallSubmit4 = await contractCallTx4.execute(client);
+	const contractCallResult4 = contractCallSubmit4.getString();
+	console.log(
+		`\n- URI for NFT with serial ${nftId} (using ContractCallQuery): \n-- ${contractCallResult4}`
+	);
+
+	// Call HIP-218 functions using ContractCallQuery()
 	const contractCallTx5 = new ContractCallQuery()
 		.setContractId(contractId)
 		.setGas(4000000)
