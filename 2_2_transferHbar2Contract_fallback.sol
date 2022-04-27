@@ -3,10 +3,10 @@ pragma solidity >=0.7.0 <0.9.0;
  
  contract FallbackTransferToContract{
 
-    constructor() public payable {}
-    
+    receive() external payable {}
+
     fallback() external payable {}
-    
+
     function getBalance() public view returns (uint) {
         return address(this).balance;
     }

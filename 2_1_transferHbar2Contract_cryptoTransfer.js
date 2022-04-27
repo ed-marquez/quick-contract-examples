@@ -30,7 +30,7 @@ const client = Client.forTestnet().setOperator(operatorId, operatorKey);
 async function main() {
 	// Import the compiled contract bytecode
 	const contractBytecode = fs.readFileSync(
-		"2_transferHbar2Contract_fallback_sol_FallbackTransferToContract.bin"
+		"2_1_transferHbar2Contract_cryptoTrans_sol_cryptoTransferToContract.bin"
 	);
 
 	// Create a file on Hedera and store the bytecode
@@ -63,7 +63,7 @@ async function main() {
 	const contractExecuteSign = await contractExecuteTx.sign(treasuryKey);
 	const contractExecuteSubmit = await contractExecuteSign.execute(client);
 	const contractExecuteRx = await contractExecuteSubmit.getReceipt(client);
-	console.log(`- Contract function call status: ${contractExecuteRx.status} \n`);
+	console.log(`- Crypto transfer to contract: ${contractExecuteRx.status} \n`);
 
 	// Query the contract balance calling the function in the contract
 	const contractQueryTx = new ContractCallQuery()

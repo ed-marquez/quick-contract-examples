@@ -21,12 +21,12 @@ const operatorId = AccountId.fromString(process.env.OPERATOR_ID);
 const operatorKey = PrivateKey.fromString(process.env.OPERATOR_PVKEY);
 const client = Client.forTestnet().setOperator(operatorId, operatorKey);
 
-client.setDefaultMaxTransactionFee(new Hbar(2));
-client.setMaxQueryPayment(new Hbar(0.75));
+// client.setDefaultMaxTransactionFee(new Hbar(2));
+// client.setMaxQueryPayment(new Hbar(0.75));
 async function main() {
 	// Import the compiled contract bytecode
 	const contractBytecode = fs.readFileSync(
-		"2_transferHbar2Contract_fallback_sol_FallbackTransferToContract.bin"
+		"2_2_transferHbar2Contract_fallback_sol_FallbackTransferToContract.bin"
 	);
 
 	// Create a file on Hedera and store the bytecode
