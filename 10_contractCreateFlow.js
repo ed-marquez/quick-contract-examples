@@ -10,8 +10,8 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 const main = async () => {
-  const myAccountId = AccountId.fromString(process.env.ACCOUNT_ID);
-  const myPrivateKey = PrivateKey.fromString(process.env.PRIVATE_KEY);
+  const myAccountId = AccountId.fromString(process.env.OPERATOR_ID);
+  const myPrivateKey = PrivateKey.fromString(process.env.OPERATOR_PVKEY);
 
   // The Hedera JS SDK makes this really easy!
   const client = Client.forTestnet();
