@@ -4,77 +4,91 @@ const {
 	AccountId,
 	PrivateKey,
 	Client,
-	FileCreateTransaction,
-	ContractCreateTransaction,
-	ContractFunctionParameters,
-	ContractExecuteTransaction,
-	ContractCallQuery,
+	AccountCreateTransaction,
 	Hbar,
+	ContractCallQuery,
 	TransferTransaction,
 	ContractInfoQuery,
-	AccountBalanceQuery,
-	TransactionRecordQuery,
+	ContractCreateFlow,
 } = require("@hashgraph/sdk");
 const fs = require("fs");
 
 // Configure accounts and client
 const operatorId = AccountId.fromString(process.env.OPERATOR_ID);
 const operatorKey = PrivateKey.fromString(process.env.OPERATOR_PVKEY);
-const treasuryId = AccountId.fromString(process.env.TREASURY_ID);
-const treasuryKey = PrivateKey.fromString(process.env.TREASURY_PVKEY);
-const aliceId = AccountId.fromString(process.env.ALICE_ID);
-const aliceyKey = PrivateKey.fromString(process.env.ALICE_PVKEY);
-
+const aliceKey = PrivateKey.generateED25519();
 const client = Client.forTestnet().setOperator(operatorId, operatorKey);
 
 async function main() {
+	// Create additional accounts needed
+	const initialBalance = 100;
+	const [accStatus, aliceId] = await accountCreatorFcn(aliceKey, initialBalance);
+	console.log(
+		`\n- Created Alice's account with initial balance of ${initialBalance} hbar: ${accStatus}`
+	);
+
 	// Import the compiled contract bytecode
 	const contractBytecode = fs.readFileSync(
 		"0_transferHbar2Contract_viaCryptoTrans_sol_hbar2Contract.bin"
 	);
 
-	// Create a file on Hedera and store the bytecode
-	const fileCreateTx = new FileCreateTransaction()
-		.setContents(contractBytecode)
-		.setKeys([operatorKey])
-		.freezeWith(client);
-	const fileCreateSign = await fileCreateTx.sign(operatorKey);
-	const fileCreateSubmit = await fileCreateSign.execute(client);
-	const fileCreateRx = await fileCreateSubmit.getReceipt(client);
-	const bytecodeFileId = fileCreateRx.fileId;
-	console.log(`- The bytecode file ID is: ${bytecodeFileId} \n`);
-
-	// Instantiate the smart contract
-	const contractInstantiateTx = new ContractCreateTransaction()
-		.setBytecodeFileId(bytecodeFileId)
-		.setGas(100000);
-	const contractInstantiateSubmit = await contractInstantiateTx.execute(client);
-	const contractInstantiateRx = await contractInstantiateSubmit.getReceipt(client);
-	const contractId = contractInstantiateRx.contractId;
-	const contractAddress = contractId.toSolidityAddress();
-	console.log(`- The smart contract ID is: ${contractId} \n`);
-	console.log(`- The smart contract ID in Solidity format is: ${contractAddress} \n`);
+	// Deploy the contract on Hedera
+	const [contractId, contractAddress] = await contractCreatorFcn(contractBytecode);
+	console.log(`\n- The smart contract ID is: ${contractId}`);
+	console.log(`- The smart contract ID in Solidity format is: ${contractAddress}`);
 
 	// Transfer HBAR to smart contract using TransferTransaction()
-	const contractExecuteTx = new TransferTransaction()
-		.addHbarTransfer(treasuryId, -10)
-		.addHbarTransfer(contractId, 10)
-		.freezeWith(client);
-	const contractExecuteSign = await contractExecuteTx.sign(treasuryKey);
-	const contractExecuteSubmit = await contractExecuteSign.execute(client);
-	const contractExecuteRx = await contractExecuteSubmit.getReceipt(client);
-	console.log(`- Crypto transfer to contract: ${contractExecuteRx.status} \n`);
+	const hbarAmount = 10;
+	const transferRx = await hbarTransferFcn(aliceId, contractId, hbarAmount);
+	console.log(`\n- Transfer ${hbarAmount} HBAR from Alice to contract: ${transferRx.status}`);
 
 	// Query the contract balance calling the function in the contract
+	const [fromCallQuery, fromInfoQuery] = await contractBalanceCheckerFcn(contractId);
+	console.log(`\n- Contract balance (from getBalance fcn): ${fromCallQuery} tinybars`);
+	console.log(`- Contract balance (from ContractInfoQuery): ${fromInfoQuery.balance.toString()}`);
+}
+
+async function accountCreatorFcn(pvKey, iBal) {
+	const response = await new AccountCreateTransaction()
+		.setInitialBalance(new Hbar(iBal))
+		.setKey(pvKey.publicKey)
+		.execute(client);
+	const receipt = await response.getReceipt(client);
+	return [receipt.status, receipt.accountId];
+}
+
+async function contractCreatorFcn(contractBytecode) {
+	const contractDeployTx = await new ContractCreateFlow()
+		.setBytecode(contractBytecode)
+		.setGas(100000)
+		.execute(client);
+	const contractDeployRx = await contractDeployTx.getReceipt(client);
+	const contractId = contractDeployRx.contractId;
+	const contractAddress = contractId.toSolidityAddress();
+	return [contractId, contractAddress];
+}
+
+async function hbarTransferFcn(sender, receiver, amount) {
+	const transferTx = new TransferTransaction()
+		.addHbarTransfer(sender, -amount)
+		.addHbarTransfer(receiver, amount)
+		.freezeWith(client);
+	const transferSign = await transferTx.sign(aliceKey);
+	const transferSubmit = await transferSign.execute(client);
+	const transferRx = await transferSubmit.getReceipt(client);
+	return transferRx;
+}
+
+async function contractBalanceCheckerFcn(contractId) {
 	const contractQueryTx = new ContractCallQuery()
 		.setContractId(contractId)
 		.setGas(100000)
 		.setFunction("getBalance");
 	const contractQuerySubmit = await contractQueryTx.execute(client);
 	const contractQueryResult = contractQuerySubmit.getUint256(0);
-	console.log(`- Contract balance (from getBalance fcn): ${contractQueryResult} \n`);
 
 	const cCheck = await new ContractInfoQuery().setContractId(contractId).execute(client);
-	console.log(`- Contract balance (from ContractInfoQuery): ${cCheck.balance.toString()} \n`);
+	return [contractQueryResult, cCheck];
 }
+
 main();
