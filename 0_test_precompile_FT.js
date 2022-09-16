@@ -92,7 +92,7 @@ async function main() {
 	// // Execute a contract function
 	// const contractExecTx0 = new ContractExecuteTransaction()
 	// 	.setContractId(contractId)
-	// 	.setGas(3000000)
+	// 	.setGas(4000000)
 	// 	.setFunction(
 	// 		"tokenAssociate",
 	// 		new ContractFunctionParameters()
