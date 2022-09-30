@@ -9,6 +9,7 @@ import "./hip-206/FeeHelper.sol";
 import "./hip-206/KeyHelper.sol";
 
 contract test is HederaTokenService {
+    address htsPrecompiles = address(0x167);
 
     function tokenAssociate(address _account, address _tokenAddress) external returns (int){
         int response = HederaTokenService.associateToken(_account, _tokenAddress);
@@ -28,13 +29,15 @@ contract test is HederaTokenService {
     // FUNGIBLE TOKENS
     //============================================ 
     
-    function approveFt(address _tokenAddress, address _spender, uint256 _amount) external returns (int) {
-        int responseCode = HederaTokenService.approve(_tokenAddress, _spender, _amount); 
-        if (responseCode != HederaResponseCodes.SUCCESS) {
-            // revert ("allowance Failed");
-            return responseCode;
-        }
-        return responseCode;
+    function approveFt( address _tokenAddress, address _spender, uint256 _amount) external returns (int) {
+        // int responseCode = HederaTokenService.approve(_tokenAddress, _spender, _amount); 
+        htsPrecompiles.delegatecall(abi.encodeWithSelector(IHederaTokenService.approve.selector,_tokenAddress, _spender, _amount)); 
+        
+        // if (responseCode != HederaResponseCodes.SUCCESS) {
+        //     // revert ("allowance Failed");
+        //     return responseCode;
+        // }
+        // return responseCode;
     }
 
     function getAllowance4Ft(address _tokenAddress, address _owner, address _spender) external returns (uint256) {
@@ -51,12 +54,14 @@ contract test is HederaTokenService {
     //============================================ 
 
     function approveNft(address _tokenAddress, address _spender, uint256 _serialNumber) external returns (int) {
-        int responseCode = HederaTokenService.approveNFT(_tokenAddress, _spender, _serialNumber); 
-        if (responseCode != HederaResponseCodes.SUCCESS) {
-            // revert ("allowance Failed");
-            return responseCode;
-        }
-        return responseCode;
+        // int responseCode = HederaTokenService.approveNFT(_tokenAddress, _spender, _serialNumber); 
+        htsPrecompiles.delegatecall(abi.encodeWithSelector(IHederaTokenService.approveNFT.selector,_tokenAddress, _spender, _serialNumber)); 
+
+        // if (responseCode != HederaResponseCodes.SUCCESS) {
+        //     // revert ("allowance Failed");
+        //     return responseCode;
+        // }
+        // return responseCode;
     }
 
     function approveAllNfts(address _tokenAddress, address _spender, bool _approveOrRevoke) external returns (int) {

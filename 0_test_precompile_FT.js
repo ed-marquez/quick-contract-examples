@@ -71,85 +71,37 @@ async function main() {
 	console.log(`- The smart contract ID is: ${contractId}`);
 	console.log(`- The smart contract ID in Solidity format is: ${contractAddress} \n`);
 
-	const tokenAssociateTx = new TokenAssociateTransaction()
-		.setTokenIds([tokenId])
-		.setAccountId(aliceId)
-		.freezeWith(client);
-	const tokenAssociateSign = await tokenAssociateTx.sign(aliceKey);
-	const tokenAssociateSubmit = await tokenAssociateSign.execute(client);
-	const tokenAssociateRx = await tokenAssociateSubmit.getReceipt(client);
-	console.log(`- Alice associated with token: ${tokenAssociateRx.status}`);
+	// const tokenAssociateTx = new TokenAssociateTransaction().setTokenIds([tokenId]).setAccountId(aliceId).freezeWith(client);
+	// const tokenAssociateSign = await tokenAssociateTx.sign(aliceKey);
+	// const tokenAssociateSubmit = await tokenAssociateSign.execute(client);
+	// const tokenAssociateRx = await tokenAssociateSubmit.getReceipt(client);
+	// console.log(`- Alice associated with token: ${tokenAssociateRx.status}`);
 
-	const tokenAssociateTxBob = new TokenAssociateTransaction()
-		.setTokenIds([tokenId])
-		.setAccountId(bobId)
-		.freezeWith(client);
-	const tokenAssociateSignBob = await tokenAssociateTxBob.sign(bobKey);
-	const tokenAssociateSubmitBob = await tokenAssociateSignBob.execute(client);
-	const tokenAssociateRxBob = await tokenAssociateSubmitBob.getReceipt(client);
-	console.log(`- Bob associated with token: ${tokenAssociateRxBob.status}`);
-
-	// // Execute a contract function
-	// const contractExecTx0 = new ContractExecuteTransaction()
-	// 	.setContractId(contractId)
-	// 	.setGas(4000000)
-	// 	.setFunction(
-	// 		"tokenAssociate",
-	// 		new ContractFunctionParameters()
-	// 			.addAddress(aliceId.toSolidityAddress())
-	// 			.addAddress(tokenAddressSol)
-	// 	)
-	// 	.freezeWith(client);
-	// const contractExecSign0 = await contractExecTx0.sign(aliceKey);
-	// const contractExecSubmit0 = await contractExecSign0.execute(client);
-	// const contractExecRec0 = await contractExecSubmit0.getRecord(client);
-	// const recQuery0 = await new TransactionRecordQuery()
-	// 	.setTransactionId(contractExecRec0.transactionId)
-	// 	.setIncludeChildren(true)
-	// 	.execute(client);
-	// console.log(
-	// 	`\n- Contract call for Association (check in Hashscan): ${recQuery0.receipt.status.toString()}`
-	// );
-
-	const sendTx = new TransferTransaction()
-		.addTokenTransfer(tokenId, treasuryId, -1)
-		.addTokenTransfer(tokenId, aliceId, 1)
-		.freezeWith(client);
-	const sendSign = await sendTx.sign(treasuryKey);
-	const sendSubmit = await sendSign.execute(client);
-	const sendRx = await sendSubmit.getReceipt(client);
-	console.log(`\n- Test token transfer Treasury2Alice status: ${sendRx.status}\n`);
+	// const tokenAssociateTxBob = new TokenAssociateTransaction().setTokenIds([tokenId]).setAccountId(bobId).freezeWith(client);
+	// const tokenAssociateSignBob = await tokenAssociateTxBob.sign(bobKey);
+	// const tokenAssociateSubmitBob = await tokenAssociateSignBob.execute(client);
+	// const tokenAssociateRxBob = await tokenAssociateSubmitBob.getReceipt(client);
+	// console.log(`- Bob associated with token: ${tokenAssociateRxBob.status}`);
 
 	// STEP 4 ===================================
 	console.log(`STEP 4 ===================================`);
 
 	// Execute a contract function
+	client.setOperator(treasuryId, treasuryKey);
 	const contractExecTx = new ContractExecuteTransaction()
 		.setContractId(contractId)
 		.setGas(4000000)
-		.setFunction(
-			"approveFt",
-			new ContractFunctionParameters()
-				.addAddress(tokenAddressSol)
-				.addAddress(aliceId.toSolidityAddress())
-				.addUint256(50)
-		)
+		.setFunction("approveFt", new ContractFunctionParameters().addAddress(tokenAddressSol).addAddress(aliceId.toSolidityAddress()).addUint256(50))
 		.freezeWith(client);
 	const contractExecSign = await contractExecTx.sign(treasuryKey);
 	const contractExecSubmit = await contractExecSign.execute(client);
 	const contractExecRec = await contractExecSubmit.getRecord(client);
+	client.setOperator(operatorId, operatorKey);
 
-	const recQuery = await new TransactionRecordQuery()
-		.setTransactionId(contractExecRec.transactionId)
-		.setIncludeChildren(true)
-		.execute(client);
-	console.log(
-		`\n- Contract call for FT Allowance (check in Hashscan): ${recQuery.receipt.status.toString()}`
-	);
+	const recQuery = await new TransactionRecordQuery().setTransactionId(contractExecRec.transactionId).setIncludeChildren(true).execute(client);
+	console.log(`\n- Contract call for FT Allowance (check in Hashscan): ${recQuery.receipt.status.toString()}`);
 	//
-	console.log(
-		`- https://testnet.mirrornode.hedera.com/api/v1/accounts/${treasuryId}/allowances/crypto \n`
-	);
+	console.log(`- https://testnet.mirrornode.hedera.com/api/v1/accounts/${treasuryId}/allowances/tokens \n`);
 	//
 	await balanceCheckerFcn(treasuryId, tokenId, client);
 	await balanceCheckerFcn(aliceId, tokenId, client);
@@ -164,7 +116,7 @@ async function main() {
 	const approvedSendSign = await approvedSendTx.sign(aliceKey);
 	const approvedSendSubmit = await approvedSendSign.execute(client);
 	const approvedSendRx = await approvedSendSubmit.getReceipt(client);
-	console.log(`\n- Allowance transfer status: ${approvedSendRx.status}`);
+	console.log(`\n- Allowance transfer status: ${approvedSendRx.status}\n`);
 
 	// client.setOperator(operatorId, operatorKey);
 
@@ -269,9 +221,7 @@ async function main() {
 		try {
 			balanceCheckTx = await new AccountBalanceQuery().setAccountId(acId).execute(client);
 			console.log(
-				`- Balance of account ${acId}: ${balanceCheckTx.hbars.toString()} + ${balanceCheckTx.tokens._map.get(
-					tkId.toString()
-				)} units of token ${tkId}`
+				`- Balance of account ${acId}: ${balanceCheckTx.hbars.toString()} + ${balanceCheckTx.tokens._map.get(tkId.toString())} units of token ${tkId}`
 			);
 		} catch {
 			balanceCheckTx = await new AccountBalanceQuery().setContractId(acId).execute(client);
